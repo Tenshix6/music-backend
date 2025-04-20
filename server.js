@@ -2,13 +2,13 @@ const express = require('express');
 const ytdl = require('ytdl-core');
 const app = express();
 
-// Route to stream YouTube audio
+
 app.get('/music', (req, res) => {
-  const youtubeUrl = req.query.url; // YouTube URL from query parameters
+  const youtubeUrl = req.query.url;
 
   res.header("Content-Type", "audio/mpeg");
 
-  // Stream the audio directly to the response
+ 
   ytdl(youtubeUrl, { filter: 'audioonly' }).pipe(res);
 });
 
