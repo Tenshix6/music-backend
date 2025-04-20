@@ -1,31 +1,14 @@
 {
-  "name": "music-backend",  
+  "name": "music-backend",
   "version": "1.0.0",
-  "description": "A custom music streaming backend and Electron app",
-  "main": "server.js",  
+  "description": "Music Streaming Backend",
+  "main": "server.js",
   "scripts": {
-    "start": "node server.js", 
-    "build": "electron-builder",  
-    "electron": "electron ." 
-  },
-  "devDependencies": {
-    "electron": "^24.0.0",  
-    "electron-builder": "^24.0.0"  
+    "start": "node server.js",
+    "build": "npm install && pip install -r requirements.txt"
   },
   "dependencies": {
     "express": "^4.17.1",
-    "cors": "^2.8.5",
-    "yt-dlp": "^2024.1.1",  
-    "fluent-ffmpeg": "^2.1.2"  
-  },
-  "build": {
-    "appId": "com.splotify.app",
-    "productName": "Splotify",
-    "files": [
-      "**/*"
-    ],
-    "win": {
-      "target": "nsis"
-    }
+    "yt-dlp": "latest"
   }
 }
