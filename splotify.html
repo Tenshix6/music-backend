@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Splotify-Created By Angel Pineda - Java, Json, HTML, CSS and Node</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;700&display=swap">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Raleway', sans-serif;
+      background: linear-gradient(to bottom right, #6a1b9a, #000000);
+      background-size: cover;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      padding: 40px 20px;
+      color: white;
+      text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.7);
+      overflow: hidden;
+    }
+
+    .container {
+      background-color: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+      border-radius: 20px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      padding: 30px 20px;
+      text-align: center;
+      width: 100%;
+      max-width: 600px;
+      opacity: 0;
+      animation: fadeIn 1.5s forwards;
+      overflow: auto;
+      max-height: 80vh;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      margin-bottom: 20px;
+    }
+
+    input[type="text"] {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 10px;
+      border: none;
+      font-size: 1rem;
+      width: 80%;
+      max-width: 400px;
+    }
+
+    button {
+      margin-top: 10px;
+      margin-left: 5px;
+      padding: 8px 14px;
+      border: none;
+      border-radius: 8px;
+      background: #8e24aa;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #ab47bc;
+    }
+
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    li {
+      background: rgba(255, 255, 255, 0.1);
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: transform 0.3s;
+    }
+
+    .song-buttons {
+      margin-top: 8px;
+    }
+
+    .song-info {
+      flex: 1;
+    }
+
+    .thumbnail {
+      width: 60px;
+      height: auto;
+      border-radius: 6px;
+    }
+
+    audio {
+      margin-top: 20px;
+      width: 100%;
+      max-width: 480px;
+      border-radius: 10px;
+    }
+
+    h2 {
+      margin-top: 40px;
+      font-size: 1.5rem;
+      color: #eee;
+    }
+
+    @keyframes fadeIn {
+      0% {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes pulseGlow {
+      0% {
+        box-shadow: 0 0 0px rgba(255, 255, 255, 0.5);
+        transform: scale(1);
+      }
+      50% {
+        box-shadow: 0 0 20px rgba(255, 255, 255, 0.9);
+        transform: scale(1.02);
+      }
+      100% {
+        box-shadow: 0 0 0px rgba(255, 255, 255, 0.5);
+        transform: scale(1);
+      }
+    }
+
+    .now-playing {
+      animation: pulseGlow 1.6s infinite;
+      background-color: rgba(255, 255, 255, 0.1);
+      border: 2px solid #ffffff55;
+      position: relative;
+    }
+
+    .now-playing .thumbnail {
+      animation: pulseGlow 1.6s infinite;
+      border: 2px solid white;
+    }
+
+    .now-playing::after {
+      content: "🎶 Now Playing";
+      position: absolute;
+      top: -12px;
+      left: 15px;
+      font-size: 0.8rem;
+      color: #ffecb3;
+      text-shadow: none;
+    }
+
+    ::-webkit-scrollbar {
+      display: none;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎵 Splotify</h1>
+    <input type="text" id="searchQuery" placeholder="Search for a song..." />
+    <button onclick="searchYouTube()">Search</button>
+    <ul id="results"></ul>
+    <button id="loadMoreButton" onclick="loadMoreResults()" style="display:none;">Load More</button>
+    <h2>💾 Saved Songs</h2>
+    <ul id="savedSongs"></ul>
+    <div id="playerContainer"></div>
+  </div>
+
+  <script>
+    const API_KEY = 'AIzaSyCvHGMVIGy0gmQRmw7S8tJUMdJ1nJ3TatU';
+    const resultsContainer = document.getElementById('results');
+    const savedContainer = document.getElementById('savedSongs');
+    const playerContainer = document.getElementById('playerContainer');
+    const loadMoreButton = document.getElementById('loadMoreButton');
+
+    let nextPageToken = '';
+    let searchQuery = '';
+
+    function searchYouTube() {
+      searchQuery = document.getElementById('searchQuery').value;
+      if (!searchQuery) return;
+
+      nextPageToken = '';
+      resultsContainer.innerHTML = '';
+      loadMoreButton.style.display = 'none';
+      fetchResults();
+    }
+
+    function fetchResults() {
+      fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${searchQuery}&type=video&key=${API_KEY}&regionCode=US${nextPageToken ? `&pageToken=${nextPageToken}` : ''}`)
+        .then(response => response.json())
+        .then(data => {
+          data.items.forEach(item => {
+            const videoId = item.id.videoId;
+            const title = item.snippet.title;
+            const thumbnail = item.snippet.thumbnails.default.url;
+
+            const li = document.createElement('li');
+            li.innerHTML = `
+              <img class="thumbnail" src="${thumbnail}" alt="Thumbnail">
+              <div class="song-info">
+                <div>${title}</div>
+                <div class="song-buttons">
+                  <button onclick="playSong('${videoId}')">Play</button>
+                  <button onclick="saveSong('${videoId}', '${title.replace(/'/g, "\\'")}', '${thumbnail}')">Save</button>
+                </div>
+              </div>
+            `;
+            resultsContainer.appendChild(li);
+          });
+
+          nextPageToken = data.nextPageToken || '';
+          if (nextPageToken) {
+            loadMoreButton.style.display = 'block';
+          }
+        });
+    }
+
+    function loadMoreResults() {
+      fetchResults();
+    }
+
+    function playSong(videoId) {
+      const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+      const audio = document.createElement('audio');
+      audio.controls = true;
+      audio.autoplay = true;
+      audio.src = `http://localhost:3000/stream?url=${encodeURIComponent(videoUrl)}`;
+
+      playerContainer.innerHTML = '';
+      playerContainer.appendChild(audio);
+
+      document.querySelectorAll('li').forEach(li => li.classList.remove('now-playing'));
+
+      const allListItems = document.querySelectorAll('#results li, #savedSongs li');
+      allListItems.forEach(li => {
+        if (li.innerHTML.includes(videoId)) {
+          li.classList.add('now-playing');
+        }
+      });
+    }
+
+    function saveSong(videoId, title, thumbnail) {
+      const saved = JSON.parse(localStorage.getItem('savedSongs')) || [];
+      const exists = saved.find(song => song.videoId === videoId);
+      if (!exists) {
+        saved.push({ videoId, title, thumbnail });
+        localStorage.setItem('savedSongs', JSON.stringify(saved));
+        loadSavedSongs();
+      }
+    }
+
+    function deleteSong(videoId) {
+      let saved = JSON.parse(localStorage.getItem('savedSongs')) || [];
+      saved = saved.filter(song => song.videoId !== videoId);
+      localStorage.setItem('savedSongs', JSON.stringify(saved));
+      loadSavedSongs();
+    }
+
+    function loadSavedSongs() {
+      savedContainer.innerHTML = '';
+      const saved = JSON.parse(localStorage.getItem('savedSongs')) || [];
+      saved.forEach(({ videoId, title, thumbnail }) => {
+        const li = document.createElement('li');
+        li.innerHTML = `
+          <img class="thumbnail" src="${thumbnail}" alt="Thumbnail">
+          <div class="song-info">
+            <div>${title}</div>
+            <div class="song-buttons">
+              <button onclick="playSong('${videoId}')">Play</button>
+              <button onclick="deleteSong('${videoId}')">Delete</button>
+            </div>
+          </div>
+        `;
+        savedContainer.appendChild(li);
+      });
+    }
+
+    window.onload = loadSavedSongs;
+
+    document.getElementById("searchQuery").addEventListener("keypress", function(e) {
+      if (e.key === "Enter") {
+        searchYouTube();
+      }
+    });
+  </script>
+</body>
+</html>
