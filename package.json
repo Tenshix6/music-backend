@@ -1,13 +1,11 @@
 {
   "name": "music-backend",
   "version": "1.0.0",
-  "description": "Music Streaming Backend",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "build": "npm install && pip install -r requirements.txt"
+    "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.17.1"
+    "express": "^4.18.2"
   }
 }
