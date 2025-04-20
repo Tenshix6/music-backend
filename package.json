@@ -8,7 +8,6 @@
     "build": "npm install && pip install -r requirements.txt"
   },
   "dependencies": {
-    "express": "^4.17.1",
-    "yt-dlp": "latest"
+    "express": "^4.17.1"
   }
 }
