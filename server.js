@@ -84,60 +84,6 @@ app.get('/stream', (req, res) => {
   });
 });
 
-// ✅ New endpoint: Pre-cache stream URL
-app.get('/getStreamUrl', (req, res) => {
-  const url = req.query.url;
-  if (!url) return res.status(400).send('Missing URL');
-
-  const videoId = extractVideoId(url);
-  if (!videoId) return res.status(400).send('Invalid YouTube URL');
-
-  // If already cached, return quickly
-  const cached = streamCache.get(videoId);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-    return res.json({ cached: true });
-  }
-
-  const cookies = process.env.YT_COOKIES;
-  if (!cookies) return res.status(500).send('YT_COOKIES env var not set');
-
-  const tempCookiePath = path.join(__dirname, 'temp_cookies.txt');
-  fs.writeFileSync(tempCookiePath, cookies);
-
-  const fetcher = spawn('yt-dlp', [
-    '--cookies', tempCookiePath,
-    '-f', 'bestaudio',
-    '--get-url',
-    url
-  ]);
-
-  let output = '';
-  fetcher.stdout.on('data', (data) => {
-    output += data.toString();
-  });
-
-  fetcher.stderr.on('data', (data) => {
-    console.error(`yt-dlp error: ${data}`);
-  });
-
-  fetcher.on('close', () => {
-    fs.unlinkSync(tempCookiePath);
-    const streamUrl = output.trim();
-
-    if (!streamUrl) {
-      return res.status(500).send('Failed to get stream URL');
-    }
-
-    streamCache.set(videoId, {
-      url: streamUrl,
-      timestamp: Date.now()
-    });
-
-    setTimeout(() => streamCache.delete(videoId), CACHE_TTL_MS);
-    res.json({ cached: false, streamUrl });
-  });
-});
-
 app.listen(3000, () => {
   console.log('Server running on port 3000');
 });
