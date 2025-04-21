@@ -31,8 +31,9 @@
       max-width: 600px;
       opacity: 0;
       animation: fadeIn 1.5s forwards;
-      overflow: auto;
-      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
     }
 
     h1 {
@@ -70,6 +71,12 @@
     ul {
       list-style-type: none;
       padding: 0;
+      margin-top: 20px;
+      flex-grow: 1;
+      overflow-y: auto;
+      max-height: 60vh; /* Adjust this for the scrollable area */
+      display: flex;
+      flex-direction: column;
     }
 
     li {
@@ -108,6 +115,27 @@
       margin-top: 40px;
       font-size: 1.5rem;
       color: #eee;
+    }
+
+    .controls {
+      margin-top: 20px;
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .controls button {
+      padding: 10px;
+      border-radius: 8px;
+      background: #8e24aa;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+
+    .controls button:hover {
+      background: #ab47bc;
     }
 
     @keyframes fadeIn {
@@ -169,6 +197,11 @@
     body {
       overflow-y: auto;
     }
+
+    /* New styles for button positioning */
+    #loadMoreButton {
+      margin-top: auto; /* Keep it at the bottom */
+    }
   </style>
 </head>
 <body>
@@ -181,6 +214,10 @@
     <h2>📀 Saved Songs</h2>
     <ul id="savedSongs"></ul>
     <div id="playerContainer"></div>
+    <div class="controls">
+      <button id="prevButton">Rewind</button>
+      <button id="skipButton">Skip</button>
+    </div>
   </div>
 
   <script>
@@ -189,9 +226,13 @@
     const savedContainer = document.getElementById('savedSongs');
     const playerContainer = document.getElementById('playerContainer');
     const loadMoreButton = document.getElementById('loadMoreButton');
+    const prevButton = document.getElementById('prevButton');
+    const skipButton = document.getElementById('skipButton');
 
     let nextPageToken = '';
     let searchQuery = '';
+    let currentSongIndex = 0;
+    let savedSongs = JSON.parse(localStorage.getItem('savedSongs')) || [];
 
     function searchYouTube() {
       searchQuery = document.getElementById('searchQuery').value;
@@ -213,7 +254,7 @@
             const thumbnail = item.snippet.thumbnails.default.url;
 
             const li = document.createElement('li');
-            li.innerHTML = `
+            li.innerHTML = ` 
               <img class="thumbnail" src="${thumbnail}" alt="Thumbnail">
               <div class="song-info">
                 <div>${title}</div>
@@ -255,39 +296,32 @@
           li.classList.add('now-playing');
         }
       });
+
+      audio.addEventListener('ended', () => {
+        nextSong();
+      });
     }
 
     function saveSong(videoId, title, thumbnail) {
-      const saved = JSON.parse(localStorage.getItem('savedSongs')) || [];
-      const exists = saved.find(song => song.videoId === videoId);
+      const exists = savedSongs.find(song => song.videoId === videoId);
       if (!exists) {
-        saved.push({ videoId, title, thumbnail });
-        localStorage.setItem('savedSongs', JSON.stringify(saved));
-        loadSavedSongs();
+        savedSongs.push({ videoId, title, thumbnail });
+        localStorage.setItem('savedSongs', JSON.stringify(savedSongs));
+        renderSavedSongs();
       }
     }
 
-    function deleteSong(videoId) {
-      let saved = JSON.parse(localStorage.getItem('savedSongs')) || [];
-      saved = saved.filter(song => song.videoId !== videoId);
-      localStorage.setItem('savedSongs', JSON.stringify(saved));
-      loadSavedSongs();
-    }
-
-    function loadSavedSongs() {
-      const saved = JSON.parse(localStorage.getItem('savedSongs')) || [];
+    function renderSavedSongs() {
       savedContainer.innerHTML = '';
-
-      saved.forEach(song => {
+      savedSongs.forEach((song, index) => {
         const li = document.createElement('li');
-        li.classList.add('saved-song');
         li.innerHTML = `
           <img class="thumbnail" src="${song.thumbnail}" alt="Thumbnail">
           <div class="song-info">
             <div>${song.title}</div>
             <div class="song-buttons">
               <button onclick="playSong('${song.videoId}')">Play</button>
-              <button onclick="deleteSong('${song.videoId}')">Delete</button>
+              <button onclick="removeSong(${index})">Remove</button>
             </div>
           </div>
         `;
@@ -295,8 +329,26 @@
       });
     }
 
-    // Initialize saved songs on page load
-    loadSavedSongs();
+    function removeSong(index) {
+      savedSongs.splice(index, 1);
+      localStorage.setItem('savedSongs', JSON.stringify(savedSongs));
+      renderSavedSongs();
+    }
+
+    function nextSong() {
+      currentSongIndex = (currentSongIndex + 1) % savedSongs.length;
+      playSong(savedSongs[currentSongIndex].videoId);
+    }
+
+    function prevSong() {
+      currentSongIndex = (currentSongIndex - 1 + savedSongs.length) % savedSongs.length;
+      playSong(savedSongs[currentSongIndex].videoId);
+    }
+
+    skipButton.addEventListener('click', nextSong);
+    prevButton.addEventListener('click', prevSong);
+
+    renderSavedSongs();  // Initially render saved songs
   </script>
 </body>
 </html>
