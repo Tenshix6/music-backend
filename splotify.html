@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Splotify-Created By Angel Pineda - Java, Json, HTML, CSS and Node</title>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Raleway:wght@400;700&display=swap">
   <style>
     body {
       margin: 0;
@@ -175,11 +174,11 @@
 <body>
   <div class="container">
     <h1>🎵 Splotify</h1>
-    <input type="text" id="searchQuery" placeholder="Search for a song..." />
+    <label for="searchQuery"></label><input type="text" id="searchQuery" placeholder="Search for a song..." />
     <button onclick="searchYouTube()">Search</button>
     <ul id="results"></ul>
     <button id="loadMoreButton" onclick="loadMoreResults()" style="display:none;">Load More</button>
-    <h2>💾 Saved Songs</h2>
+    <h2>📀 Saved Songs</h2>
     <ul id="savedSongs"></ul>
     <div id="playerContainer"></div>
   </div>
@@ -276,17 +275,19 @@
     }
 
     function loadSavedSongs() {
-      savedContainer.innerHTML = '';
       const saved = JSON.parse(localStorage.getItem('savedSongs')) || [];
-      saved.forEach(({ videoId, title, thumbnail }) => {
+      savedContainer.innerHTML = '';
+
+      saved.forEach(song => {
         const li = document.createElement('li');
+        li.classList.add('saved-song');
         li.innerHTML = `
-          <img class="thumbnail" src="${thumbnail}" alt="Thumbnail">
+          <img class="thumbnail" src="${song.thumbnail}" alt="Thumbnail">
           <div class="song-info">
-            <div>${title}</div>
+            <div>${song.title}</div>
             <div class="song-buttons">
-              <button onclick="playSong('${videoId}')">Play</button>
-              <button onclick="deleteSong('${videoId}')">Delete</button>
+              <button onclick="playSong('${song.videoId}')">Play</button>
+              <button onclick="deleteSong('${song.videoId}')">Delete</button>
             </div>
           </div>
         `;
@@ -294,13 +295,8 @@
       });
     }
 
-    window.onload = loadSavedSongs;
-
-    document.getElementById("searchQuery").addEventListener("keypress", function(e) {
-      if (e.key === "Enter") {
-        searchYouTube();
-      }
-    });
+    // Initialize saved songs on page load
+    loadSavedSongs();
   </script>
 </body>
 </html>
